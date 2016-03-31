@@ -43,7 +43,7 @@ public void withdraw(double amount) {
                     return 1 + (amount-1000) * 0.002;
 //            case SUPER_SAVINGS:
 //                if (amount <= 4000)
-//                    return 20;
+//                    return 20;ls
             case MAXI_SAVINGS:
                 if (amount <= 1000)
                     return amount * 0.02;

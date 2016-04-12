@@ -2,6 +2,7 @@ package com.abc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Date;
 
 public class Account {
 
@@ -25,46 +26,156 @@ public class Account {
         }
     }
 
-public void withdraw(double amount) {
-    if (amount <= 0) {
-        throw new IllegalArgumentException("amount must be greater than zero");
-    } else {
-        transactions.add(new Transaction(-amount));
-    }
-}
-
-    public double interestEarned() {
-        double amount = sumTransactions();
-        switch(accountType){
-            case SAVINGS:
-                if (amount <= 1000)
-                    return amount * 0.001;
-                else
-                    return 1 + (amount-1000) * 0.002;
-            case CHECKING:
-                return amount * 0.001;
-//            case SUPER_SAVINGS:
-//                if (amount <= 4000)
-//                    return 20;
-            case MAXI_SAVINGS:
-                if (amount <= 1000)
-                    return amount * 0.02;
-                if (amount <= 2000)
-                    return 20 + (amount-1000) * 0.05;
-                return 70 + (amount-2000) * 0.1;
-            default:
-                return amount * 0.001;
+    public void withdraw(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("amount must be greater than zero");
+        } else {
+            transactions.add(new Transaction(-amount));
         }
     }
 
-    public double sumTransactions() {
-       return checkIfTransactionsExist(true);
+    /* TODO: add security to determine if person can make transfer 
+    (security -> can user deposit into any bank account, or just one he owns?) */
+    public void transfer(double amount, Account to) {
+        if (amount <= 0 ) {
+            throw new IllegalArgumentException("amount must be greater than zero");
+        }
+        else {
+            if (to != null) {
+                this.withdraw(amount); // withdraw from this account
+                to.deposit(amount); //deposit into other account
+            }
+            else {
+                throw new IllegalArgumentException("Recipient account does not exist"); // TODO: test this
+            }
+        }
     }
 
-    private double checkIfTransactionsExist(boolean checkAll) {
+    public double interestEarned() {
+        
+        // double amount = sumTransactions();
         double amount = 0.0;
-        for (Transaction t: transactions)
-            amount += t.amount;
+        double sumTransactionsToDate = 0.0;
+        double interestRate;
+        double daysPerYear = 365.24;
+        Date previousTransactionDate;
+        Date currentTransactionDate;
+        int numDaysBetween;
+        
+        switch(accountType){
+            case SAVINGS:
+                if (transactionsExist()) {
+                    previousTransactionDate = null;
+                    amount = 0.0;
+                    for (Transaction t: this.transactions) {
+                    
+                        sumTransactionsToDate += t.getTransactionAmount();
+                        currentTransactionDate = t.getTransactionDate();
+                        System.out.println(t.getTransactionAmount() + " , " + t.getTransactionDate());
+                        System.out.println(t);
+                        
+                        if (previousTransactionDate != null) { // if it is null then this is the first transaction in the account
+                            amount += sumTransactionsToDate;                           
+                            numDaysBetween = getNumberOfDaysBetween(previousTransactionDate, currentTransactionDate);
+
+                            // calc the current bank amount * interest rate
+                            if (amount <= 1000) {
+                                interestRate = 0.001 / daysPerYear;
+                                amount = amount * interestRate * numDaysBetween;
+                            }
+                            else {
+                                interestRate = 0.001 / daysPerYear;
+                                double bigInterestRate = 0.002 / daysPerYear;
+                                amount = (interestRate * numDaysBetween * 1000) + (amount-1000) * bigInterestRate * numDaysBetween;
+                            }
+                        }
+                        previousTransactionDate = currentTransactionDate;
+                    }       
+                }
+                
+            case MAXI_SAVINGS:
+                if (transactionsExist()) {
+                    previousTransactionDate = null;
+                    amount = 0.0;
+                    for (Transaction t: this.transactions) {
+                        
+                        sumTransactionsToDate += t.getTransactionAmount();
+                        currentTransactionDate = t.getTransactionDate();
+
+                        if (previousTransactionDate != null) { // if it is null then this is the first transaction in the account
+                            numDaysBetween = getNumberOfDaysBetween(previousTransactionDate, currentTransactionDate);
+                            amount += sumTransactionsToDate;
+                            interestRate = 0.001 / daysPerYear;
+                            if (recentWithdrawal(this) == false) { // check if there has been a withdrawal in the past ten days
+                                interestRate = 0.05 / daysPerYear;
+                            }
+                            amount = amount * interestRate * numDaysBetween;
+                        }
+                        previousTransactionDate = currentTransactionDate;  
+                    }
+                }
+                
+            default:
+                if (transactionsExist()) {
+                    previousTransactionDate = null;
+                    amount = 0.0;
+                    for (Transaction t: this.transactions) {
+                    
+                        sumTransactionsToDate += t.getTransactionAmount();
+                        currentTransactionDate = t.getTransactionDate();
+
+                        if (previousTransactionDate != null) { // if it is null then this is the first transaction in the account
+                            amount += sumTransactionsToDate;
+                            numDaysBetween = getNumberOfDaysBetween(previousTransactionDate, currentTransactionDate);
+                            interestRate = 0.001 / daysPerYear;
+                            amount = amount * interestRate * numDaysBetween;
+                        }
+                        previousTransactionDate = currentTransactionDate;  
+                    }
+                } 
+        }
+        return amount;
+    }
+    
+    /* TODO: determine whether withdrawal on this account occurred within past ten days
+    */
+    public boolean recentWithdrawal(Account account) {
+        DateProvider today = new DateProvider();
+        if (transactionsExist()) {
+            for (Transaction t: this.transactions) {
+                if (t.getTransactionAmount() <= 0 ) {
+                    
+                    Date todayDate = today.now();
+                    int numDays = 10; // variable to declare the last number of days to check for withdrawal
+                    return getNumberOfDaysBetween(t.getTransactionDate(), todayDate) < numDays;
+                }
+            }
+        }
+        else {
+            return false;
+        }
+        return false; // TODO: fix this, I think it makes recentWithdrawal always return false
+    }
+    
+    public int getNumberOfDaysBetween(Date date1, Date date2) {
+        long numDaysLong;
+        int numDays;
+        
+        numDaysLong = (date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24); // this does not properly account for irregular time changes ie. daylight savings time
+        numDays = (int) numDaysLong;
+        
+        return numDays;
+    }
+
+    public boolean transactionsExist() {
+        return this.transactions != null;
+    }
+    
+    // TODO: check public/private of this
+    public double sumTransactions() {
+        double amount = 0.0;
+        for (Transaction t: this.transactions)
+            amount += t.getTransactionAmount();
         return amount;
     }
 

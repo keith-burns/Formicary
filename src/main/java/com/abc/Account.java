@@ -99,7 +99,6 @@ public class Account {
                 }
                 return interestAmount;
                 
->>>>>>> dev
             case MAXI_SAVINGS:
                 interestAmount = 0.0;
                 accountTotal = 0.0;

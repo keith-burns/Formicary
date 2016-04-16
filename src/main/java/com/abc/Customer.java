@@ -35,7 +35,7 @@ public class Customer {
     }
 
     public String getStatement() {
-        String statement = null;
+        String statement;
         statement = "Statement for " + name + "\n";
         double total = 0.0;
         for (Account a : accounts) {
@@ -65,8 +65,8 @@ public class Customer {
         //Now total up all the transactions
         double total = 0.0;
         for (Transaction t : a.transactions) {
-            s += "  " + (t.amount < 0 ? "withdrawal" : "deposit") + " " + toDollars(t.amount) + "\n";
-            total += t.amount;
+            s += "  " + (t.getTransactionAmount() < 0 ? "withdrawal" : "deposit") + " " + toDollars(t.getTransactionAmount()) + "\n";
+            total += t.getTransactionAmount();
         }
         s += "Total " + toDollars(total);
         return s;

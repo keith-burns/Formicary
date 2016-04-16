@@ -2,6 +2,7 @@ package com.abc;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 
@@ -15,22 +16,25 @@ public class CustomerTest {
 
         Customer henry = new Customer("Henry").openAccount(checkingAccount).openAccount(savingsAccount);
 
-        checkingAccount.deposit(100.0);
-        savingsAccount.deposit(4000.0);
-        savingsAccount.withdraw(200.0);
+        checkingAccount.deposit(505.0, DateProvider.getInstance().now());
+        savingsAccount.deposit(4000.0, DateProvider.getInstance().now());
+        savingsAccount.withdraw(200.0, DateProvider.getInstance().now());
+        checkingAccount.transfer(500.0, savingsAccount, DateProvider.getInstance().now());
 
         assertEquals("Statement for Henry\n" +
                 "\n" +
                 "Checking Account\n" +
-                "  deposit $100.00\n" +
-                "Total $100.00\n" +
+                "  deposit $505.00\n" +
+                "  withdrawal $500.00\n" +
+                "Total $5.00\n" +
                 "\n" +
                 "Savings Account\n" +
                 "  deposit $4,000.00\n" +
                 "  withdrawal $200.00\n" +
-                "Total $3,800.00\n" +
+                "  deposit $500.00\n" +
+                "Total $4,300.00\n" +
                 "\n" +
-                "Total In All Accounts $3,900.00", henry.getStatement());
+                "Total In All Accounts $4,305.00", henry.getStatement());
     }
 
     @Test
